@@ -1,6 +1,7 @@
-pyTelegramBotAPI
 flask
+pytelegrambotapi
+yfinance
+pandas
+pandas_ta
 pytz
 requests
-pandas
-yfinance
