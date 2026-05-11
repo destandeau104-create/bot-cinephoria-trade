@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────
 #  SECRETS (Replit Secrets / variables d'env)
 # ─────────────────────────────────────────────
-TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+TELEGRAM_TOKEN   = "8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk"
+TELEGRAM_CHAT_ID = "1432682636"
 
 if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
     logger.warning("⚠️  TELEGRAM_TOKEN ou TELEGRAM_CHAT_ID manquant — les alertes ne seront pas envoyées.")
