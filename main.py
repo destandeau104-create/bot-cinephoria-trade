@@ -1,12 +1,3 @@
- """
-=============================================================
-  BOT TRADING XAU/USD - PRÉCISION INSTITUTIONNELLE
-  Prix Spot: XAUUSD=X (Yahoo Finance)
-  Volume: GLD (ETF Gold Shares)
-=============================================================
-"""
-
-
 import keep_alive
 import time
 import os
