@@ -339,11 +339,20 @@ def main():
 
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
-    try:
-        from keep_alive import keep_alive
-        keep_alive()
-        print("🚀 Bot XAU/USD démarré et en attente de messages...")
-        bot.polling(none_stop=True)
-    except Exception as e:
-        print(f"❌ Erreur au lancement : {e}")
+    from keep_alive import keep_alive
+    import threading
+    
+    # 1. On lance le serveur web en arrière-plan
+    keep_alive()
+    print("✅ Serveur Keep-Alive actif")
+    
+    # 2. On lance l'écoute Telegram dans un fil séparé (Threading)
+    # Cela permet au bot de répondre pendant qu'il scanne l'or
+    tele_thread = threading.Thread(target=lambda: bot.polling(none_stop=True))
+    tele_thread.daemon = True
+    tele_thread.start()
+    print("🚀 Bot Telegram en écoute...")
+    
+    # 3. On lance la boucle principale de trading
+    main()
 
