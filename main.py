@@ -3,208 +3,224 @@ import time
 import threading
 from datetime import datetime
 import pytz
-import requests
 import pandas as pd
 import yfinance as yf
 import pandas_ta as ta
 import telebot
 from flask import Flask
 
-# ════════════════════════════════════════════
+# ============================================================
 
-# 1. CONFIGURATION
+# CONFIGURATION
 
-# ════════════════════════════════════════════
+# ============================================================
 
-TOKEN   = "8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk"
-CHAT_ID = "1432682636"
+TOKEN   = “8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk”
+CHAT_ID = “1432682636”
 bot     = telebot.TeleBot(TOKEN)
 
-# ════════════════════════════════════════════
-
-# 2. PARAMÈTRES DE STRATÉGIE
-
-# ════════════════════════════════════════════
-
-PARIS_TZ       = pytz.timezone("Europe/Paris")
-LOT_SIZE       = 0.50
-STOP_LOSS_PTS  = 4.0
+PARIS_TZ        = pytz.timezone(“Europe/Paris”)
+LOT_SIZE        = 0.50
+STOP_LOSS_PTS   = 4.0
 TAKE_PROFIT_PTS = 8.0
 
-# ════════════════════════════════════════════
+# ============================================================
 
-# 3. FLASK KEEP-ALIVE (obligatoire sur Render)
+# FLASK KEEP-ALIVE
 
-# ════════════════════════════════════════════
+# ============================================================
 
 app = Flask(**name**)
 
-@app.route("/")
+@app.route(”/”)
 def home():
-return "Gold Bot actif ✅", 200
+return “Bot XAU/USD actif”, 200
 
-@app.route("/health")
+@app.route(”/health”)
 def health():
-now = datetime.now(PARIS_TZ).strftime("%H:%M:%S")
-return f"OK — {now}", 200
+now = datetime.now(PARIS_TZ).strftime(”%H:%M:%S”)
+return “OK “ + now, 200
 
 def run_flask():
-print("Flask démarré sur 0.0.0.0:8080", flush=True)
-app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+print(“Flask demarre sur 0.0.0.0:8080”, flush=True)
+app.run(host=“0.0.0.0”, port=8080, debug=False, use_reloader=False)
 
-# ════════════════════════════════════════════
+# ============================================================
 
-# 4. STRATÉGIE (INTACTE — ne pas modifier)
+# STRATEGIE (NE PAS MODIFIER)
 
-# ════════════════════════════════════════════
+# ============================================================
 
 def is_in_session():
 now = datetime.now(PARIS_TZ)
-return (
-(9, 0) <= (now.hour, now.minute) <= (11, 30) or
-(14, 30) <= (now.hour, now.minute) <= (17, 30)
-)
+matin = (now.hour, now.minute) >= (9, 0) and (now.hour, now.minute) <= (11, 30)
+aprem = (now.hour, now.minute) >= (14, 30) and (now.hour, now.minute) <= (17, 30)
+return matin or aprem
 
 def get_data(ticker, interval, period):
 try:
 df = yf.download(
-ticker, interval=interval, period=period,
-progress=False, auto_adjust=True
+ticker,
+interval=interval,
+period=period,
+progress=False,
+auto_adjust=True
 )
 return df
 except Exception as e:
-print(f"[get_data] Erreur {ticker} {interval} : {e}", flush=True)
+print(“Erreur get_data “ + ticker + “ : “ + str(e), flush=True)
 return pd.DataFrame()
 
 def analyse_market():
-# ── H4 & H1
-df_h1 = get_data("XAUUSD=X", "1h", "20d")
+# H4 et H1
+df_h1 = get_data(“XAUUSD=X”, “1h”, “20d”)
 if len(df_h1) < 200:
-print("[analyse] df_h1 insuffisant", flush=True)
+print(“df_h1 insuffisant : “ + str(len(df_h1)) + “ bougies”, flush=True)
 return None
 
 ```
 ema200_h4 = ta.ema(df_h1["Close"].resample("4h").last().dropna(), length=200)
 ema50_h1  = ta.ema(df_h1["Close"], length=50)
 
-# ── M15 & M5
-df_m5   = get_data("XAUUSD=X", "5m", "2d")
+if ema200_h4 is None or ema50_h1 is None:
+    print("EMA calcul echoue", flush=True)
+    return None
+
+# M5 et M15
+df_m5 = get_data("XAUUSD=X", "5m", "2d")
+if df_m5.empty:
+    print("df_m5 vide", flush=True)
+    return None
+
 rsi_m15 = ta.rsi(df_m5["Close"].resample("15m").last().dropna(), length=14)
 rsi_m5  = ta.rsi(df_m5["Close"], length=14)
 
-# ── Volume GLD
+if rsi_m15 is None or rsi_m5 is None:
+    print("RSI calcul echoue", flush=True)
+    return None
+
+# Volume GLD
 df_gld = get_data("GLD", "5m", "2d")
 if df_gld.empty:
-    print("[analyse] GLD vide", flush=True)
+    print("GLD vide", flush=True)
     return None
 
 vol_sma = df_gld["Volume"].rolling(20).mean()
-p       = float(df_m5["Close"].iloc[-1])
+
+# Valeurs actuelles
+p         = float(df_m5["Close"].iloc[-1])
+e200      = float(ema200_h4.iloc[-1])
+e50       = float(ema50_h1.iloc[-1])
+r15       = float(rsi_m15.iloc[-1])
+r5_prev   = float(rsi_m5.iloc[-2])
+r5_curr   = float(rsi_m5.iloc[-1])
+vol_curr  = float(df_gld["Volume"].iloc[-1])
+vol_avg   = float(vol_sma.iloc[-1])
 
 print(
-    f"[analyse] Prix={p:.2f} "
-    f"EMA200H4={float(ema200_h4.iloc[-1]):.2f} "
-    f"EMA50H1={float(ema50_h1.iloc[-1]):.2f} "
-    f"RSI15={float(rsi_m15.iloc[-1]):.1f} "
-    f"RSI5={float(rsi_m5.iloc[-1]):.1f}",
+    "Prix=" + str(round(p, 2)) +
+    " EMA200H4=" + str(round(e200, 2)) +
+    " EMA50H1=" + str(round(e50, 2)) +
+    " RSI15=" + str(round(r15, 1)) +
+    " RSI5=" + str(round(r5_curr, 1)) +
+    " Vol=" + str(round(vol_curr, 0)) +
+    " VolSMA=" + str(round(vol_avg, 0)),
     flush=True
 )
 
-# ── Signal BUY
+# Signal BUY
 if (
-    p > float(ema200_h4.iloc[-1]) and
-    p > float(ema50_h1.iloc[-1])  and
-    float(rsi_m15.iloc[-1]) > 50  and
-    float(rsi_m5.iloc[-2])  < 55  and
-    float(rsi_m5.iloc[-1])  >= 55 and
-    float(df_gld["Volume"].iloc[-1]) > 1.2 * float(vol_sma.iloc[-1])
+    p > e200 and
+    p > e50 and
+    r15 > 50 and
+    r5_prev < 55 and
+    r5_curr >= 55 and
+    vol_curr > 1.2 * vol_avg
 ):
     return {
         "dir": "BUY",
         "p":   p,
-        "sl":  p - STOP_LOSS_PTS,
-        "tp":  p + TAKE_PROFIT_PTS,
+        "sl":  round(p - STOP_LOSS_PTS, 2),
+        "tp":  round(p + TAKE_PROFIT_PTS, 2),
     }
 
-# ── Signal SELL
+# Signal SELL
 if (
-    p < float(ema200_h4.iloc[-1]) and
-    p < float(ema50_h1.iloc[-1])  and
-    float(rsi_m15.iloc[-1]) < 50  and
-    float(rsi_m5.iloc[-2])  > 45  and
-    float(rsi_m5.iloc[-1])  <= 45 and
-    float(df_gld["Volume"].iloc[-1]) > 1.2 * float(vol_sma.iloc[-1])
+    p < e200 and
+    p < e50 and
+    r15 < 50 and
+    r5_prev > 45 and
+    r5_curr <= 45 and
+    vol_curr > 1.2 * vol_avg
 ):
     return {
         "dir": "SELL",
         "p":   p,
-        "sl":  p + STOP_LOSS_PTS,
-        "tp":  p - TAKE_PROFIT_PTS,
+        "sl":  round(p + STOP_LOSS_PTS, 2),
+        "tp":  round(p - TAKE_PROFIT_PTS, 2),
     }
 
 return None
 ```
 
-# ════════════════════════════════════════════
+# ============================================================
 
-# 5. BOUCLE DE TRADING
+# BOUCLE DE TRADING
 
-# ════════════════════════════════════════════
+# ============================================================
 
 def trading_loop():
-print("Boucle de trading démarrée", flush=True)
+print(“Boucle de trading demarree”, flush=True)
 
 ```
 while True:
     try:
-        now = datetime.now(PARIS_TZ).strftime("%H:%M")
-        print(f"[{now}] Vérification session...", flush=True)
+        now_str = datetime.now(PARIS_TZ).strftime("%H:%M")
+        print("[" + now_str + "] Verification...", flush=True)
 
         if is_in_session():
-            print(f"[{now}] Session active — analyse en cours...", flush=True)
+            print("[" + now_str + "] Session active - analyse en cours", flush=True)
             signal = analyse_market()
 
             if signal:
-                emoji = "🟢 ACHAT" if signal["dir"] == "BUY" else "🔴 VENTE"
+                direction = "ACHAT" if signal["dir"] == "BUY" else "VENTE"
+                emoji     = "BUY" if signal["dir"] == "BUY" else "SELL"
                 msg = (
-                    f"⚡ SIGNAL XAU/USD — {emoji}\n"
-                    f"Entrée  : {signal['p']:.2f}\n"
-                    f"Stop    : {signal['sl']:.2f}\n"
-                    f"Cible   : {signal['tp']:.2f}\n"
-                    f"Lot     : {LOT_SIZE}"
+                    "SIGNAL XAU/USD - " + direction + "\n"
+                    "Entree : " + str(signal["p"]) + "\n"
+                    "Stop   : " + str(signal["sl"]) + "\n"
+                    "Cible  : " + str(signal["tp"]) + "\n"
+                    "Lot    : " + str(LOT_SIZE)
                 )
-                bot.send_message(CHAT_ID, msg, parse_mode="HTML")
-                print(f"[{now}] Signal envoyé : {signal['dir']} @ {signal['p']:.2f}", flush=True)
+                bot.send_message(CHAT_ID, msg)
+                print("[" + now_str + "] Signal envoye : " + emoji + " @ " + str(signal["p"]), flush=True)
             else:
-                print(f"[{now}] Pas de signal", flush=True)
+                print("[" + now_str + "] Pas de signal", flush=True)
         else:
-            print(f"[{now}] Hors session", flush=True)
+            print("[" + now_str + "] Hors session", flush=True)
 
-        time.sleep(300)  # Attente 5 minutes
+        time.sleep(300)
 
     except Exception as e:
-        print(f"[ERREUR] {e}", flush=True)
+        print("ERREUR : " + str(e), flush=True)
         time.sleep(60)
 ```
 
-# ════════════════════════════════════════════
+# ============================================================
 
-# 6. LANCEMENT (Flask + Trading en parallèle)
+# LANCEMENT
 
-# ════════════════════════════════════════════
+# ============================================================
 
-if **name** == "**main**":
-print("Démarrage Gold Bot…", flush=True)
+if **name** == “**main**”:
+print(“Demarrage du bot XAU/USD…”, flush=True)
 
 ```
-# Flask dans un thread séparé (daemon=True → s'arrête avec le programme)
 flask_thread = threading.Thread(target=run_flask, daemon=True)
 flask_thread.start()
 
-# Petite pause pour laisser Flask démarrer
 time.sleep(2)
-print("Flask actif, lancement de la boucle trading...", flush=True)
+print("Flask actif - lancement boucle trading", flush=True)
 
-# Boucle trading dans le thread principal
 trading_loop()
 ```
