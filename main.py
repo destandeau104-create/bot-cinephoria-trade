@@ -15,11 +15,11 @@ from flask import Flask
 
 # ============================================================
 
-TOKEN   = “8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk”
-CHAT_ID = “1432682636”
+TOKEN   = "8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk"
+CHAT_ID = "1432682636"
 bot     = telebot.TeleBot(TOKEN)
 
-PARIS_TZ        = pytz.timezone(“Europe/Paris”)
+PARIS_TZ        = pytz.timezone("Europe/Paris")
 LOT_SIZE        = 0.50
 STOP_LOSS_PTS   = 4.0
 TAKE_PROFIT_PTS = 8.0
@@ -32,18 +32,18 @@ TAKE_PROFIT_PTS = 8.0
 
 app = Flask(**name**)
 
-@app.route(”/”)
+@app.route("/")
 def home():
-return “Bot XAU/USD actif”, 200
+return "Bot XAU/USD actif", 200
 
-@app.route(”/health”)
+@app.route("/health")
 def health():
-now = datetime.now(PARIS_TZ).strftime(”%H:%M:%S”)
-return “OK “ + now, 200
+now = datetime.now(PARIS_TZ).strftime("%H:%M:%S")
+return "OK " + now, 200
 
 def run_flask():
-print(“Flask demarre sur 0.0.0.0:8080”, flush=True)
-app.run(host=“0.0.0.0”, port=8080, debug=False, use_reloader=False)
+print("Flask demarre sur 0.0.0.0:8080", flush=True)
+app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
 
 # ============================================================
 
@@ -87,14 +87,14 @@ auto_adjust=True
 )
 return df
 except Exception as e:
-print(“Erreur get_data “ + ticker + “ : “ + str(e), flush=True)
+print("Erreur get_data " + ticker + " : " + str(e), flush=True)
 return pd.DataFrame()
 
 def analyse_market():
 # H1 pour EMA200 H4 et EMA50 H1
-df_h1 = get_data(“XAUUSD=X”, “1h”, “20d”)
+df_h1 = get_data("XAUUSD=X", "1h", "20d")
 if len(df_h1) < 200:
-print(“df_h1 insuffisant : “ + str(len(df_h1)) + “ bougies”, flush=True)
+print("df_h1 insuffisant : " + str(len(df_h1)) + " bougies", flush=True)
 return None
 
 ```
@@ -186,7 +186,7 @@ return None
 # ============================================================
 
 def trading_loop():
-print(“Boucle de trading demarree”, flush=True)
+print("Boucle de trading demarree", flush=True)
 
 ```
 while True:
@@ -227,8 +227,8 @@ while True:
 
 # ============================================================
 
-if **name** == “**main**”:
-print(“Demarrage du bot XAU/USD…”, flush=True)
+if **name** == "**main**":
+print("Demarrage du bot XAU/USD…", flush=True)
 
 ```
 flask_thread = threading.Thread(target=run_flask, daemon=True)
