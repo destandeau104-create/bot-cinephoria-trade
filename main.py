@@ -16,8 +16,8 @@ from flask import Flask
 
 # ════════════════════════════════════════════
 
-TOKEN   = “8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk”
-CHAT_ID = “1432682636”
+TOKEN   = "8794987935:AAECh2yzzM_g9dZ3ki3tlKC1UWdC44YOjCk"
+CHAT_ID = "1432682636"
 bot     = telebot.TeleBot(TOKEN)
 
 # ════════════════════════════════════════════
@@ -26,7 +26,7 @@ bot     = telebot.TeleBot(TOKEN)
 
 # ════════════════════════════════════════════
 
-PARIS_TZ       = pytz.timezone(“Europe/Paris”)
+PARIS_TZ       = pytz.timezone("Europe/Paris")
 LOT_SIZE       = 0.50
 STOP_LOSS_PTS  = 4.0
 TAKE_PROFIT_PTS = 8.0
@@ -39,18 +39,18 @@ TAKE_PROFIT_PTS = 8.0
 
 app = Flask(**name**)
 
-@app.route(”/”)
+@app.route("/")
 def home():
-return “Gold Bot actif ✅”, 200
+return "Gold Bot actif ✅", 200
 
-@app.route(”/health”)
+@app.route("/health")
 def health():
-now = datetime.now(PARIS_TZ).strftime(”%H:%M:%S”)
-return f”OK — {now}”, 200
+now = datetime.now(PARIS_TZ).strftime("%H:%M:%S")
+return f"OK — {now}", 200
 
 def run_flask():
-print(“Flask démarré sur 0.0.0.0:8080”, flush=True)
-app.run(host=“0.0.0.0”, port=8080, debug=False, use_reloader=False)
+print("Flask démarré sur 0.0.0.0:8080", flush=True)
+app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
 
 # ════════════════════════════════════════════
 
@@ -73,14 +73,14 @@ progress=False, auto_adjust=True
 )
 return df
 except Exception as e:
-print(f”[get_data] Erreur {ticker} {interval} : {e}”, flush=True)
+print(f"[get_data] Erreur {ticker} {interval} : {e}", flush=True)
 return pd.DataFrame()
 
 def analyse_market():
 # ── H4 & H1
-df_h1 = get_data(“XAUUSD=X”, “1h”, “20d”)
+df_h1 = get_data("XAUUSD=X", "1h", "20d")
 if len(df_h1) < 200:
-print(”[analyse] df_h1 insuffisant”, flush=True)
+print("[analyse] df_h1 insuffisant", flush=True)
 return None
 
 ```
@@ -152,7 +152,7 @@ return None
 # ════════════════════════════════════════════
 
 def trading_loop():
-print(“Boucle de trading démarrée”, flush=True)
+print("Boucle de trading démarrée", flush=True)
 
 ```
 while True:
@@ -193,8 +193,8 @@ while True:
 
 # ════════════════════════════════════════════
 
-if **name** == “**main**”:
-print(“Démarrage Gold Bot…”, flush=True)
+if **name** == "**main**":
+print("Démarrage Gold Bot…", flush=True)
 
 ```
 # Flask dans un thread séparé (daemon=True → s'arrête avec le programme)
