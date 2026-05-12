@@ -2,5 +2,6 @@ pyTelegramBotAPI
 flask
 yfinance
 pandas
+pandas_ta
 pytz
 requests
