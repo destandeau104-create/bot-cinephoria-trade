@@ -1,7 +1,7 @@
 pyTelegramBotAPI
 flask
-yfinance==0.2.40
 pandas
 numpy
 pytz
 requests
+metaapi-cloud-sdk
